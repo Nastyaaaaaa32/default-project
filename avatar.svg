@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="96" height="96" role="img" aria-label="Анастасия">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#B45309"/>
+      <stop offset="100%" stop-color="#D97706"/>
+    </linearGradient>
+  </defs>
+  <circle cx="48" cy="48" r="48" fill="url(#g)"/>
+  <text x="48" y="48" text-anchor="middle" dominant-baseline="central"
+        font-family="Segoe UI, -apple-system, Helvetica, Arial, sans-serif"
+        font-size="44" font-weight="700" fill="#FFFDF9" letter-spacing="-1">А</text>
+</svg>

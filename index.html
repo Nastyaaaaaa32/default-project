@@ -8,8 +8,8 @@
     :root {
       --text: #0B0B0B;
       --muted: #4A4A4A;
-      --accent: #0F766E;
-      --bg: #FAFAF9;
+      --accent: #B45309;
+      --bg: #FFFCF7;
     }
 
     * {
@@ -43,6 +43,15 @@
       color: var(--accent);
     }
 
+    .avatar {
+      width: 76px;
+      height: 76px;
+      border-radius: 50%;
+      display: block;
+      margin-bottom: 20px;
+      box-shadow: 0 0 0 4px rgba(180, 83, 9, 0.15);
+    }
+
     .subtitle {
       margin: 0 0 32px;
       color: var(--muted);
@@ -73,7 +82,8 @@
 </head>
 <body>
   <main>
-    <p class="subtitle">Моя первая страничка</p>
+    <img class="avatar" src="avatar.svg" alt="Аватар: буква А" width="76" height="76">
+    <p class="subtitle">Мой учебный блог</p>
     <h1>Привет! Меня зовут <span>Анастасия</span></h1>
 
     <p>
@@ -90,7 +100,8 @@
 
     <p>
       Если вы читаете этот текст, значит, всё работает — страница
-      отображается в браузере, и я на правильном пути.
+      отображается в браузере, и я на правильном пути. Скоро здесь появится
+      больше примеров кода и первые проекты на JavaScript.
     </p>
 
     <footer>Создано в процессе обучения · <span>Анастасия</span></footer>
