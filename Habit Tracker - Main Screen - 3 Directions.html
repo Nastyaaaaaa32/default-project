@@ -1,0 +1,526 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Трекер привычек — главный экран · 3 направления</title>
+<!--
+  SYSTEM DECLARATION — draft v1
+  Platform: mobile 390×844, hi-fi clickable prototype (prototype shell, not shipping UI)
+  Tone: calm, serious, data-forward. No gamification noise, no emoji, no gradients.
+  Content: identical across all 3 directions — you compare style, not copy.
+  Habits: 6 daily, done today: 1, 3,5. Week 39: пн 6/6, вт 6/6, ср live, чт–вс future.
+
+  A · SWISS EDITORIAL (Pentagram / Vignelli lineage)
+    Type: Archivo 10 / 11 / 16 / 52 · one family · weight contrast, numbered sections
+    Color: ink #14120F on paper #F5F2EC · accent #E8321E sparingly (today, done)
+    Grid: hairline rules between rows, left-flush headers, tabular figures
+
+  B · DIETER RAMS industrial (Braun lineage)
+    Type: Helvetica 9 / 10 / 15 / 60 · one or two sizes, medium weight
+    Color: #111 / #6F6F6F on #FAFAFA · lines #E4E4E4 · one functional accent #158F5B
+           (accent only = "done today" + progress fill)
+    Layout: product-first hero (3/6), spec-table rows, hairline column dividers
+
+  C · BRUTALIST WEB (Are.na / terminal lineage)
+    Type: IBM Plex Mono 11 / 13 / 15 / 30 · deliberately "unstyled"
+    Color: #000 on #FFF · single accent #0033FF for links only · no radius, no shadow
+    Layout: raw table, visible borders, [x] statuses, ascii progress
+
+  Shared: hit targets ≥ 44px (whole row toggles), text-wrap: pretty, CSS Grid, oklch avoided
+          for hand-picked hex consistency. No filler sections.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root { --shell: #1d1d1f; --shell-line: #3a3a3d; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { background: var(--shell); }
+  body {
+    background: var(--shell); color: #e8e8ea;
+    font-family: "Archivo", sans-serif;
+    display: flex; flex-direction: column; align-items: center;
+    gap: 20px; padding: 28px 16px 56px; min-height: 100vh;
+    text-wrap: pretty;
+  }
+
+  /* ---------- page chrome: assumptions + switcher ---------- */
+  .notes {
+    width: 100%; max-width: 900px; border: 1px solid var(--shell-line);
+    padding: 18px 20px; background: #232326;
+  }
+  .notes h1 { font-size: 15px; font-weight: 600; letter-spacing: .02em; margin-bottom: 6px; }
+  .notes p { font-size: 12.5px; line-height: 1.55; color: #a7a7ad; }
+  .notes .todo { color: #d8b25a; margin-top: 6px; }
+  .systems { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 14px; }
+  .sys { border: 1px solid var(--shell-line); padding: 10px 12px; font-size: 11.5px; line-height: 1.5; color: #a7a7ad; }
+  .sys b { display: block; color: #e8e8ea; font-size: 12px; margin-bottom: 4px; letter-spacing: .04em; }
+
+  .switcher { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center; }
+  .switcher .lbl { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: #8a8a90; margin-right: 6px; }
+  .switcher button {
+    font-family: inherit; font-size: 13px; letter-spacing: .03em;
+    background: transparent; color: #c9c9cf; border: 1px solid var(--shell-line);
+    padding: 10px 18px; min-height: 44px; cursor: pointer;
+  }
+  .switcher button:hover { border-color: #6a6a70; color: #fff; }
+  .switcher button.active { background: #e8e8ea; color: #1d1d1f; border-color: #e8e8ea; font-weight: 600; }
+  .pitch { max-width: 900px; text-align: center; font-size: 12.5px; line-height: 1.6; color: #a7a7ad; min-height: 40px; }
+  .pitch b { color: #e8e8ea; }
+
+  /* ---------- device ---------- */
+  .phone {
+    width: 390px; height: 844px; position: relative; overflow: hidden;
+    border: 10px solid #000; border-radius: 44px; box-shadow: 0 24px 60px rgba(0,0,0,.55);
+    background: #fff; flex-shrink: 0;
+  }
+  .screen { position: absolute; inset: 0; display: none; flex-direction: column; }
+  .screen.active { display: flex; }
+
+  .statusbar {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 14px 24px 6px; font-size: 12px; font-weight: 600; flex-shrink: 0;
+  }
+  .statusbar .dev { display: flex; gap: 5px; align-items: center; }
+  .statusbar .bar { width: 3px; background: currentColor; border-radius: 1px; }
+  .statusbar .batt { width: 22px; height: 11px; border: 1.5px solid currentColor; border-radius: 3px; position: relative; }
+  .statusbar .batt::after { content: ""; position: absolute; inset: 2px; right: 6px; background: currentColor; }
+
+  .content { flex: 1; overflow-y: auto; padding: 0 24px; }
+  .content::-webkit-scrollbar { width: 0; }
+
+  .row {
+    display: flex; align-items: center; gap: 14px; cursor: pointer;
+    -webkit-user-select: none; user-select: none;
+  }
+  .row:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+  .name { flex: 1; text-wrap: pretty; }
+
+  .nav {
+    flex-shrink: 0; display: flex; align-items: stretch;
+    min-height: 56px;
+  }
+  .nav button {
+    flex: 1; font-family: inherit; background: none; border: 0; cursor: pointer;
+    min-height: 44px; letter-spacing: inherit; padding: 0 6px;
+  }
+
+  /* ================= A · SWISS EDITORIAL ================= */
+  .scr-a { background: #F5F2EC; color: #14120F; font-family: "Archivo", sans-serif; }
+  .scr-a .statusbar { color: #14120F; }
+  .scr-a .datehead { padding: 18px 0 0; border-bottom: 1px solid #14120F; }
+  .scr-a .kicker { display: flex; justify-content: space-between; font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: #6B675F; }
+  .scr-a .bigdate { display: flex; align-items: flex-end; justify-content: space-between; padding: 6px 0 12px; }
+  .scr-a .bigdate .d { font-size: 52px; font-weight: 700; letter-spacing: -.03em; line-height: 1; font-variant-numeric: tabular-nums; }
+  .scr-a .bigdate .cnt { font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; padding-bottom: 6px; }
+  .scr-a .bigdate .cnt b { color: #E8321E; }
+  .scr-a .sec { display: flex; justify-content: space-between; align-items: baseline;
+    font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: #6B675F;
+    padding: 22px 0 8px; border-bottom: 1px solid #14120F; }
+  .scr-a .sec .no { color: #14120F; font-weight: 600; margin-right: 8px; }
+  .scr-a .row { min-height: 58px; border-bottom: 1px solid rgba(20,18,15,.16); gap: 12px; }
+  .scr-a .row .idx { font-size: 10px; color: #6B675F; font-variant-numeric: tabular-nums; width: 18px; }
+  .scr-a .row .name { font-size: 16px; font-weight: 500; }
+  .scr-a .row .streak { font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; color: #14120F; }
+  .scr-a .check {
+    width: 22px; height: 22px; border: 1.5px solid #14120F; background: transparent;
+    display: grid; place-items: center; flex-shrink: 0; order: 3;
+    font-size: 13px; font-weight: 700; color: transparent; transition: background .15s;
+  }
+  .scr-a .row.on .check { background: #E8321E; border-color: #E8321E; color: #F5F2EC; }
+  .scr-a .row.on .name { color: #14120F; }
+  .scr-a .row:not(.on) .name { color: #4a473f; }
+  .scr-a .week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; padding: 14px 0 6px; }
+  .scr-a .week .day { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .scr-a .week .lb { font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: #6B675F; }
+  .scr-a .week .col { width: 100%; height: 64px; display: flex; align-items: flex-end; }
+  .scr-a .week .fill { width: 100%; background: #14120F; min-height: 3px; transition: height .2s; }
+  .scr-a .week .day.today .fill { background: #E8321E; }
+  .scr-a .week .day.future .fill { background: rgba(20,18,15,.14); height: 3px !important; }
+  .scr-a .week .val { font-size: 9.5px; color: #6B675F; font-variant-numeric: tabular-nums; }
+  .scr-a .week .day.today .val { color: #E8321E; font-weight: 600; }
+  .scr-a .nav { border-top: 1px solid #14120F; }
+  .scr-a .nav button { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: #6B675F; }
+  .scr-a .nav button.active { color: #14120F; font-weight: 700; box-shadow: inset 0 -3px 0 #E8321E; }
+
+  /* ================= B · DIETER RAMS ================= */
+  .scr-b { background: #FAFAFA; color: #111111; font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; }
+  .scr-b .statusbar { color: #111; font-weight: 500; }
+  .scr-b .hero { padding: 26px 0 20px; }
+  .scr-b .hero .lab { font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: #6F6F6F; }
+  .scr-b .hero .fig { display: flex; align-items: baseline; gap: 10px; margin-top: 8px; }
+  .scr-b .hero .big { font-size: 60px; font-weight: 500; letter-spacing: -.02em; line-height: 1; font-variant-numeric: tabular-nums; }
+  .scr-b .hero .of { font-size: 15px; color: #6F6F6F; }
+  .scr-b .hero .track { height: 4px; background: #E4E4E4; margin-top: 16px; }
+  .scr-b .hero .fill { height: 100%; background: #158F5B; width: 50%; transition: width .2s; }
+  .scr-b .hero .pct { font-size: 10px; letter-spacing: .12em; color: #6F6F6F; margin-top: 6px; text-align: right; font-variant-numeric: tabular-nums; }
+  .scr-b .listlab { font-size: 9px; letter-spacing: .18em; text-transform: uppercase; color: #6F6F6F;
+    padding: 14px 0 8px; border-top: 1px solid #111; display: flex; justify-content: space-between; }
+  .scr-b .row { min-height: 60px; border-bottom: 1px solid #E4E4E4; gap: 0; }
+  .scr-b .row .name { font-size: 15px; font-weight: 500; padding: 10px 12px 10px 0; }
+  .scr-b .row .sch { display: block; font-size: 9px; letter-spacing: .14em; text-transform: uppercase; color: #6F6F6F; margin-top: 4px; }
+  .scr-b .row .streak { width: 74px; border-left: 1px solid #E4E4E4; align-self: stretch;
+    display: flex; flex-direction: column; justify-content: center; gap: 3px; padding-left: 12px; }
+  .scr-b .row .streak .sl { font-size: 8.5px; letter-spacing: .14em; text-transform: uppercase; color: #6F6F6F; }
+  .scr-b .row .streak .sv { font-size: 14px; font-weight: 500; font-variant-numeric: tabular-nums; }
+  .scr-b .check {
+    width: 44px; align-self: stretch; border-left: 1px solid #E4E4E4;
+    display: grid; place-items: center; flex-shrink: 0; background: none;
+  }
+  .scr-b .check i {
+    width: 24px; height: 24px; border: 1.5px solid #111; display: grid; place-items: center;
+    font-style: normal; font-size: 13px; font-weight: 700; color: transparent; transition: background .15s;
+  }
+  .scr-b .row.on .check i { background: #158F5B; border-color: #158F5B; color: #fff; }
+  .scr-b .row:not(.on) .name { color: #6F6F6F; }
+  .scr-b .week { padding: 16px 0 8px; border-top: 1px solid #111; }
+  .scr-b .weekhead { display: flex; justify-content: space-between; font-size: 9px; letter-spacing: .18em; text-transform: uppercase; color: #6F6F6F; margin-bottom: 12px; }
+  .scr-b .weekgrid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+  .scr-b .weekgrid .day { text-align: center; }
+  .scr-b .weekgrid .lb { font-size: 9px; letter-spacing: .08em; text-transform: uppercase; color: #6F6F6F; }
+  .scr-b .weekgrid .box { height: 40px; border: 1px solid #E4E4E4; display: flex; align-items: flex-end; margin-top: 6px; }
+  .scr-b .weekgrid .box .fill { width: 100%; background: #111; height: 100%; transition: height .2s; }
+  .scr-b .weekgrid .day.today .box { border-color: #158F5B; }
+  .scr-b .weekgrid .day.today .box .fill { background: #158F5B; }
+  .scr-b .weekgrid .day.future .box .fill { background: #E4E4E4; height: 4px !important; }
+  .scr-b .weekgrid .val { font-size: 9px; color: #6F6F6F; margin-top: 5px; font-variant-numeric: tabular-nums; }
+  .scr-b .nav { border-top: 1px solid #111; }
+  .scr-b .nav button { font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: #6F6F6F; }
+  .scr-b .nav button.active { color: #111; font-weight: 700; box-shadow: inset 0 -2px 0 #111; }
+
+  /* ================= C · BRUTALIST WEB ================= */
+  .scr-c { background: #FFFFFF; color: #000000; font-family: "IBM Plex Mono", monospace; }
+  .scr-c .statusbar { border-bottom: 1px solid #000; font-weight: 500; padding: 12px 16px 8px; font-size: 11px; }
+  .scr-c .content { padding: 0 14px; }
+  .scr-c pre.head {
+    font-family: inherit; font-size: 12px; line-height: 1.55; padding: 14px 0 12px;
+    border-bottom: 1px solid #000; white-space: pre-wrap; text-wrap: pretty;
+  }
+  .scr-c .tbl { width: 100%; border-collapse: collapse; margin-top: 14px; font-size: 12px; }
+  .scr-c .tbl th {
+    background: #000; color: #fff; font-weight: 500; text-align: left;
+    font-size: 10px; letter-spacing: .1em; text-transform: uppercase; padding: 7px 8px;
+  }
+  .scr-c .tbl td { border: 1px solid #000; padding: 0 8px; height: 48px; vertical-align: middle; }
+  .scr-c .tbl .row { display: contents; }
+  .scr-c .tbl td.st { width: 44px; text-align: center; font-weight: 700; }
+  .scr-c .tbl td.hb { font-size: 12.5px; }
+  .scr-c .tbl td.sk { width: 74px; font-size: 11px; color: #000; text-align: right; font-variant-numeric: tabular-nums; }
+  .scr-c .tbl tr.on td.hb { text-decoration: line-through; text-decoration-thickness: 1px; color: #333; }
+  .scr-c .tbl tr:not(.on) td.hb { color: #333; }
+  .scr-c .tbl tr.today td.st { box-shadow: inset 0 0 0 1px #0033FF; }
+  .scr-c .weekblk { border: 1px solid #000; border-top: 0; padding: 10px 8px; font-size: 11.5px; line-height: 1.7; white-space: pre-wrap; }
+  .scr-c .weekblk .acc { color: #0033FF; }
+  .scr-c .hint { font-size: 10.5px; color: #555; padding: 10px 0 4px; line-height: 1.6; }
+  .scr-c .nav { border-top: 1px solid #000; }
+  .scr-c .nav button { font-size: 11.5px; color: #0033FF; text-decoration: underline; text-underline-offset: 3px; border-right: 1px solid #000; }
+  .scr-c .nav button:last-child { border-right: 0; }
+  .scr-c .nav button.active { color: #000; font-weight: 700; text-decoration: none; }
+</style>
+</head>
+<body>
+
+<section class="notes">
+  <h1>Трекер привычек · главный экран — draft v1</h1>
+  <p>
+    Рабочие допущения: мобильный экран 390×844, тон спокойный/серьёзный, контент одинаков во всех
+    трёх направлениях — сравниваешь стиль, а не текст. Одна система на направление, объявлены ниже.
+    Тап по строке отмечает привычку, счётчики и недельный график пересчитываются.
+  </p>
+  <p class="todo">Жду: подтверждения направления (или микса) — дальше доводим выбранное: пустые состояния, экран истории, тёмная тема.</p>
+  <div class="systems">
+    <div class="sys"><b>A · SWISS EDITORIAL</b>Archivo 10/11/16/52 · #14120F на #F5F2EC · акцент #E8321E локально · волосяные линейки, нумерованные секции, табличные цифры</div>
+    <div class="sys"><b>B · DIETER RAMS</b>Helvetica 9/10/15/60 · #111/#6F6F6F на #FAFAFA · один функциональный акцент #158F5B (только «выполнено сегодня») · спек-таблицы, герой 3/6</div>
+    <div class="sys"><b>C · BRUTALIST WEB</b>IBM Plex Mono 11/13/15/30 · #000 на #FFF · акцент #0033FF только на ссылках · голые таблицы, рамки, [x], ascii-прогресс</div>
+  </div>
+</section>
+
+<nav class="switcher" aria-label="Переключение направлений">
+  <span class="lbl">Направление</span>
+  <button data-dir="a" class="active">A · Swiss</button>
+  <button data-dir="b">B · Rams</button>
+  <button data-dir="c">C · Brutalist</button>
+</nav>
+
+<p class="pitch" id="pitch"><b>A · Swiss Editorial</b> — точность и авторитет: строгая сетка, чёрное на тёплой бумаге, красный только там, где «сегодня». Референс: Pentagram / Vignelli.</p>
+
+<div class="phone">
+
+  <!-- ============ SCREEN A ============ -->
+  <section class="screen scr-a active" data-dir="a">
+    <div class="statusbar">
+      <span>08:12</span>
+      <span class="dev">
+        <span class="bar" style="height:5px"></span><span class="bar" style="height:7px"></span><span class="bar" style="height:9px"></span><span class="bar" style="height:11px"></span>
+        <span class="batt" style="margin-left:6px"></span>
+      </span>
+    </div>
+    <div class="content">
+      <header class="datehead">
+        <div class="kicker"><span>Среда, 23 сентября 2026</span><span>Неделя 39</span></div>
+        <div class="bigdate">
+          <span class="d">23.09</span>
+          <span class="cnt"><b data-count>3</b> из 6 выполнено · <span data-pct>50</span>%</span>
+        </div>
+      </header>
+
+      <div class="sec"><span><span class="no">01</span>Сегодня</span><span>Серия</span></div>
+
+      <div class="row on" role="button" tabindex="0" aria-pressed="true">
+        <span class="idx">01</span>
+        <span class="name">Утренняя пробежка — 5 км</span>
+        <span class="streak">×12</span>
+        <span class="check">✓</span>
+      </div>
+      <div class="row" role="button" tabindex="0" aria-pressed="false">
+        <span class="idx">02</span>
+        <span class="name">Читать 20 страниц</span>
+        <span class="streak">×34</span>
+        <span class="check">✓</span>
+      </div>
+      <div class="row on" role="button" tabindex="0" aria-pressed="true">
+        <span class="idx">03</span>
+        <span class="name">Медитация — 10 минут</span>
+        <span class="streak">×8</span>
+        <span class="check">✓</span>
+      </div>
+      <div class="row" role="button" tabindex="0" aria-pressed="false">
+        <span class="idx">04</span>
+        <span class="name">10 000 шагов</span>
+        <span class="streak">×5</span>
+        <span class="check">✓</span>
+      </div>
+      <div class="row on" role="button" tabindex="0" aria-pressed="true">
+        <span class="idx">05</span>
+        <span class="name">Выпить 2 л воды</span>
+        <span class="streak">×21</span>
+        <span class="check">✓</span>
+      </div>
+      <div class="row" role="button" tabindex="0" aria-pressed="false">
+        <span class="idx">06</span>
+        <span class="name">Не трогать телефон после 23:00</span>
+        <span class="streak">×3</span>
+        <span class="check">✓</span>
+      </div>
+
+      <div class="sec"><span><span class="no">02</span>Неделя 39</span><span>Выполнено в день</span></div>
+      <div class="week">
+        <div class="day"><span class="lb">Пн</span><span class="col"><span class="fill" style="height:100%"></span></span><span class="val">6/6</span></div>
+        <div class="day"><span class="lb">Вт</span><span class="col"><span class="fill" style="height:100%"></span></span><span class="val">6/6</span></div>
+        <div class="day today"><span class="lb">Ср</span><span class="col"><span class="fill" data-today-bar style="height:50%"></span></span><span class="val" data-today-count>3/6</span></div>
+        <div class="day future"><span class="lb">Чт</span><span class="col"><span class="fill"></span></span><span class="val">—</span></div>
+        <div class="day future"><span class="lb">Пт</span><span class="col"><span class="fill"></span></span><span class="val">—</span></div>
+        <div class="day future"><span class="lb">Сб</span><span class="col"><span class="fill"></span></span><span class="val">—</span></div>
+        <div class="day future"><span class="lb">Вс</span><span class="col"><span class="fill"></span></span><span class="val">—</span></div>
+      </div>
+      <div style="height:16px"></div>
+    </div>
+    <nav class="nav">
+      <button class="active">Сегодня</button>
+      <button>История</button>
+      <button>Настройки</button>
+    </nav>
+  </section>
+
+  <!-- ============ SCREEN B ============ -->
+  <section class="screen scr-b" data-dir="b">
+    <div class="statusbar">
+      <span>08:12</span>
+      <span class="dev">
+        <span class="bar" style="height:5px"></span><span class="bar" style="height:7px"></span><span class="bar" style="height:9px"></span><span class="bar" style="height:11px"></span>
+        <span class="batt" style="margin-left:6px"></span>
+      </span>
+    </div>
+    <div class="content">
+      <div class="hero">
+        <div class="lab">Сегодня · среда, 23 сентября</div>
+        <div class="fig">
+          <span class="big"><span data-count>3</span> / 6</span>
+          <span class="of">привычек выполнено</span>
+        </div>
+        <div class="track"><div class="fill" data-bar-fill style="width:50%"></div></div>
+        <div class="pct"><span data-pct>50</span> %</div>
+      </div>
+
+      <div class="listlab"><span>Ежедневные привычки</span><span>Серия</span></div>
+
+      <div class="row on" role="button" tabindex="0" aria-pressed="true">
+        <span class="name">Утренняя пробежка — 5 км<span class="sch">Каждый день · 07:00</span></span>
+        <span class="streak"><span class="sl">Серия</span><span class="sv">12 дн.</span></span>
+        <span class="check"><i>✓</i></span>
+      </div>
+      <div class="row" role="button" tabindex="0" aria-pressed="false">
+        <span class="name">Читать 20 страниц<span class="sch">Каждый день · 21:00</span></span>
+        <span class="streak"><span class="sl">Серия</span><span class="sv">34 дн.</span></span>
+        <span class="check"><i>✓</i></span>
+      </div>
+      <div class="row on" role="button" tabindex="0" aria-pressed="true">
+        <span class="name">Медитация — 10 минут<span class="sch">Каждый день · 08:00</span></span>
+        <span class="streak"><span class="sl">Серия</span><span class="sv">8 дн.</span></span>
+        <span class="check"><i>✓</i></span>
+      </div>
+      <div class="row" role="button" tabindex="0" aria-pressed="false">
+        <span class="name">10 000 шагов<span class="sch">Каждый день · весь день</span></span>
+        <span class="streak"><span class="sl">Серия</span><span class="sv">5 дн.</span></span>
+        <span class="check"><i>✓</i></span>
+      </div>
+      <div class="row on" role="button" tabindex="0" aria-pressed="true">
+        <span class="name">Выпить 2 л воды<span class="sch">Каждый день · весь день</span></span>
+        <span class="streak"><span class="sl">Серия</span><span class="sv">21 дн.</span></span>
+        <span class="check"><i>✓</i></span>
+      </div>
+      <div class="row" role="button" tabindex="0" aria-pressed="false">
+        <span class="name">Не трогать телефон после 23:00<span class="sch">Каждый день · 23:00</span></span>
+        <span class="streak"><span class="sl">Серия</span><span class="sv">3 дн.</span></span>
+        <span class="check"><i>✓</i></span>
+      </div>
+
+      <div class="week">
+        <div class="weekhead"><span>Неделя 39</span><span>Выполнено в день</span></div>
+        <div class="weekgrid">
+          <div class="day"><span class="lb">Пн</span><span class="box"><span class="fill" style="height:100%"></span></span><span class="val">6/6</span></div>
+          <div class="day"><span class="lb">Вт</span><span class="box"><span class="fill" style="height:100%"></span></span><span class="val">6/6</span></div>
+          <div class="day today"><span class="lb">Ср</span><span class="box"><span class="fill" data-today-bar style="height:50%"></span></span><span class="val" data-today-count>3/6</span></div>
+          <div class="day future"><span class="lb">Чт</span><span class="box"><span class="fill"></span></span><span class="val">—</span></div>
+          <div class="day future"><span class="lb">Пт</span><span class="box"><span class="fill"></span></span><span class="val">—</span></div>
+          <div class="day future"><span class="lb">Сб</span><span class="box"><span class="fill"></span></span><span class="val">—</span></div>
+          <div class="day future"><span class="lb">Вс</span><span class="box"><span class="fill"></span></span><span class="val">—</span></div>
+        </div>
+      </div>
+      <div style="height:12px"></div>
+    </div>
+    <nav class="nav">
+      <button class="active">Сегодня</button>
+      <button>История</button>
+      <button>Настройки</button>
+    </nav>
+  </section>
+
+  <!-- ============ SCREEN C ============ -->
+  <section class="screen scr-c" data-dir="c">
+    <div class="statusbar">
+      <span>08:12</span>
+      <span class="dev">[:::] &nbsp;<span class="batt"></span></span>
+    </div>
+    <div class="content">
+<pre class="head">habit-tracker v0.4  ========================= ср 23.09.2026
+&gt; today: <span data-count>3</span>/6  <span data-blocks>[███░░░]</span>  <span data-pct>50</span>%
+&gt; week 39 — пн 6/6, вт 6/6, ср live, чт-вс: scheduled</pre>
+
+      <table class="tbl">
+        <thead>
+          <tr><th>[st]</th><th>привычка</th><th style="text-align:right">серия</th></tr>
+        </thead>
+        <tbody>
+          <tr class="row on" role="button" tabindex="0" aria-pressed="true">
+            <td class="st">[x]</td><td class="hb">Утренняя пробежка — 5 км</td><td class="sk">12 дн.</td>
+          </tr>
+          <tr class="row" role="button" tabindex="0" aria-pressed="false">
+            <td class="st">[&nbsp;]</td><td class="hb">Читать 20 страниц</td><td class="sk">34 дн.</td>
+          </tr>
+          <tr class="row on" role="button" tabindex="0" aria-pressed="true">
+            <td class="st">[x]</td><td class="hb">Медитация — 10 минут</td><td class="sk">8 дн.</td>
+          </tr>
+          <tr class="row" role="button" tabindex="0" aria-pressed="false">
+            <td class="st">[&nbsp;]</td><td class="hb">10 000 шагов</td><td class="sk">5 дн.</td>
+          </tr>
+          <tr class="row on" role="button" tabindex="0" aria-pressed="true">
+            <td class="st">[x]</td><td class="hb">Выпить 2 л воды</td><td class="sk">21 дн.</td>
+          </tr>
+          <tr class="row" role="button" tabindex="0" aria-pressed="false">
+            <td class="st">[&nbsp;]</td><td class="hb">Не трогать телефон после 23:00</td><td class="sk">3 дн.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="weekblk">week: пн <span class="acc">██████ 6/6</span> | вт <span class="acc">██████ 6/6</span> | ср <span class="acc" data-today-count>███░░░ 3/6</span>
+       чт — | пт — | сб — | вс —</div>
+
+      <p class="hint">клик по строке = отметка [x]; &gt; переключение вкладок — сегодня / история / настройки</p>
+    </div>
+    <nav class="nav">
+      <button class="active">&gt; сегодня</button>
+      <button>история</button>
+      <button>настройки</button>
+    </nav>
+  </section>
+
+</div>
+
+<script>
+  const TOTAL = 6;
+  const pitches = {
+    a: "<b>A · Swiss Editorial</b> — точность и авторитет: строгая сетка, чёрное на тёплой бумаге, красный только там, где «сегодня». Референс: Pentagram / Vignelli.",
+    b: "<b>B · Dieter Rams</b> — полезное и честное: спек-таблицы, серые шкалы, единственный зелёный акцент только на «выполнено». Референс: Braun, ранний Apple.",
+    c: "<b>C · Brutalist Web</b> — сырой инструмент: моноширинный, голые таблицы, [x] и ascii-прогресс. Референс: Are.na, терминал."
+  };
+
+  function update(screen) {
+    const rows = screen.querySelectorAll(".row");
+    const done = screen.querySelectorAll(".row.on").length;
+    const pct = Math.round(done / TOTAL * 100);
+    screen.querySelectorAll("[data-count]").forEach(el => el.textContent = done);
+    screen.querySelectorAll("[data-pct]").forEach(el => el.textContent = pct);
+
+    const barFill = screen.querySelector("[data-bar-fill]");
+    if (barFill) barFill.style.width = pct + "%";
+
+    const todayBar = screen.querySelector("[data-today-bar]");
+    if (todayBar) todayBar.style.height = pct + "%";
+
+    const todayCount = screen.querySelector("[data-today-count]");
+    if (todayCount) {
+      if (screen.dataset.dir === "c") {
+        const full = Math.round(done / TOTAL * 6);
+        todayCount.textContent = "█".repeat(full) + "░".repeat(6 - full) + " " + done + "/6";
+      } else {
+        todayCount.textContent = done + "/6";
+      }
+    }
+
+    const blocks = screen.querySelector("[data-blocks]");
+    if (blocks) {
+      const full = Math.round(done / TOTAL * 6);
+      blocks.textContent = "[" + "█".repeat(full) + "░".repeat(6 - full) + "]";
+    }
+  }
+
+  document.addEventListener("click", e => {
+    const row = e.target.closest(".row");
+    if (row) {
+      const screen = row.closest(".screen");
+      row.classList.toggle("on");
+      row.setAttribute("aria-pressed", row.classList.contains("on"));
+      if (screen.dataset.dir === "c") {
+        row.querySelector(".st").innerHTML = row.classList.contains("on") ? "[x]" : "[&nbsp;]";
+      }
+      update(screen);
+      return;
+    }
+    const navBtn = e.target.closest(".nav button");
+    if (navBtn) {
+      navBtn.closest(".nav").querySelectorAll("button").forEach(b => b.classList.remove("active"));
+      navBtn.classList.add("active");
+      return;
+    }
+    const dirBtn = e.target.closest(".switcher button");
+    if (dirBtn) {
+      const dir = dirBtn.dataset.dir;
+      document.querySelectorAll(".switcher button").forEach(b => b.classList.toggle("active", b === dirBtn));
+      document.querySelectorAll(".screen").forEach(s => s.classList.toggle("active", s.dataset.dir === dir));
+      document.getElementById("pitch").innerHTML = pitches[dir];
+    }
+  });
+
+  document.addEventListener("keydown", e => {
+    if ((e.key === "Enter" || e.key === " ") && e.target.classList && e.target.classList.contains("row")) {
+      e.preventDefault();
+      e.target.click();
+    }
+  });
+
+  document.querySelectorAll(".screen").forEach(update);
+</script>
+</body>
+</html>

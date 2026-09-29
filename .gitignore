@@ -1,0 +1,15 @@
+# Зависимости Node.js
+node_modules/
+
+# Собранный билд Vite
+dist/
+
+# Кэш Python
+__pycache__/
+*.pyc
+
+# Логи и системные файлы
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
